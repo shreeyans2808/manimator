@@ -18,7 +18,7 @@ Building on the incredible work by 3Blue1Brown and the manim community, _manimat
 
 - Gradio Demo: [![On Gradio (Hugging Face)](https://huggingface.co/datasets/huggingface/badges/raw/main/open-in-hf-spaces-md-dark.svg)](https://huggingface.co/spaces/HyperCluster/manimator)
 - Or replace `arxiv.org` with `manimator.hypercluster.tech` in any arXiv PDF URL for instant visualizations!
-
+Tested with Groq, OpenRouter (with Qwen) and Gemini for pdf retrieval
 ### 🌟 Highlights so far:
 
 - Over **1000+ uses** within 24 hours of launch and over **5000 uses** within a week
