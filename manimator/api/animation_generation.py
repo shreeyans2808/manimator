@@ -8,7 +8,7 @@ from manimator.utils.system_prompts import MANIM_SYSTEM_PROMPT
 load_dotenv()
 
 
-def generate_animation_response(prompt: str) -> str:
+def generate_animation_response(prompt: str, image_prompt) -> str:
     """Generate Manim animation code from a text prompt.
 
     Args:
@@ -30,9 +30,10 @@ def generate_animation_response(prompt: str) -> str:
             },
             {
                 "role": "user",
-                "content": f"{prompt}\n\n NOTE!!!: Make sure the objects or text in the generated code are not overlapping at any point in the video. Make sure that each scene is properly cleaned up before transitioning to the next scene.",
+                "content": f"{prompt} \n {image_prompt}\n\n NOTE!!!: Make sure the objects or text in the generated code are not overlapping at any point in the video. Make sure that each scene is properly cleaned up before transitioning to the next scene.",
             },
         ]
+    
         response = litellm.completion(
             model=os.getenv("CODE_GEN_MODEL"), messages=messages, num_retries=2
         )

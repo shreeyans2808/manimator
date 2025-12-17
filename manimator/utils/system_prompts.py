@@ -203,6 +203,11 @@ For each topic or concept, organize the information as follows:
 * 2-3 suggested visualizations or animations
 * Emphasis on dynamic representations where appropriate
 * Clear connection to key points
+* Each visual element must specify whether it uses animation only or requires an image reference
+
+**Image References** (only if required):
+* List of images used, explicitly mapped to visual elements
+* If no images are required, this section must still be present with an empty array
 
 **Style**:
 * Brief description of visual presentation approach
@@ -220,8 +225,16 @@ For each topic or concept, organize the information as follows:
    - Start each bullet with an action verb (Show, Animate, Demonstrate)
    - Focus on dynamic rather than static representations
    - Include specific details about what should be visualized
+   - Explicitly mention whether the visual uses:
+     - Animation only, or
+     - Animation + Image reference
 
-3. Style Guidelines:
+3. Image References:
+   - Images must be referenced by title only (no URLs)
+   - Every image must map to at least one Visual Element
+   - Images must not replace animations, only support them
+
+4. Style Guidelines:
    - Keep to 1-2 sentences
    - Include both visual and presentational elements
    - Match style to content type (e.g., "geometric" for math, "organic" for biology)
@@ -239,6 +252,7 @@ For each topic or concept, organize the information as follows:
    - Emphasize dynamic processes over static states
    - Include both macro and micro level visualizations
    - Suggest interactive elements where appropriate
+   - Clearly justify any image usage
 
 3. Style Development:
    - Match aesthetic to subject matter
@@ -250,6 +264,7 @@ For each topic or concept, organize the information as follows:
 
 
 *Topic*: [Subject Name]
+
 *Key Points*:
 * [Core concept with mathematical formula if applicable]
 * [Fundamental principle]
@@ -257,23 +272,152 @@ For each topic or concept, organize the information as follows:
 * [Key application or implication]
 
 *Visual Elements*:
-* [Primary visualization with specific details]
-* [Secondary visualization with animation suggestions]
-* [Supporting visual element]
+* Show [animated concept description]  
+  - Type: Animation only  
+  - Related Key Point: [Reference]
 
-*Style*: [Visual approach and specific effects]
+* Animate [process or mechanism] with step-by-step transitions  
+  - Type: Animation + Image  
+  - Image Used: [Exact image title from Image References]  
+  - Related Key Point: [Reference]
 
-## Implementation Notes:
+* Demonstrate [comparison or grounding example]  
+  - Type: Animation + Image  
+  - Image Used: [Exact image title from Image References and Exact Visual Element description]  
+  - Related Key Point: [Reference like Why the image is needed (reference, grounding, comparison)]
 
-1. Maintain consistency in depth and detail across all topics
-2. Ensure mathematical notation is precise and relevant
-3. Make visual suggestions specific and actionable
-4. Keep style descriptions concise but informative
-5. Adapt format based on subject matter while maintaining structure
+*Image References*:
+```json
+[
+  {
+    "image_title": "Search-friendly image title, state details necessary to describe the image to a search engine",
+  }
+]
+Style: [Visual approach and specific effects]
+
+Implementation Notes:
+Maintain consistency in depth and detail across all topics
+
+Ensure mathematical notation is precise and relevant
+
+Make visual suggestions specific and actionable
+
+Ensure every image is explicitly tied to a visual element
+
+Keep style descriptions concise but informative
+
+Adapt format based on subject matter while maintaining structure
 
 When processing input:
-1. First identify core concepts
-2. Organize into key points with relevant formulas
-3. Develop appropriate visual representations
-4. Define suitable style approach
-5. Review for completeness and consistency"""
+
+First identify core concepts
+
+Organize into key points with relevant formulas
+
+Develop visual representations and decide animation vs image usage
+
+Explicitly map images to visuals if used
+
+Define suitable style approach
+
+Review for completeness, consistency, and correct image mapping
+"""
+
+IMAGE_EXTRACTION_SYSTEM_PROMPT = """# Image Extraction & Search Query System
+
+You are an image-extraction agent operating on content generated using the SCENE_SYSTEM_PROMPT.
+
+Your task is to:
+1. Identify ONLY the **Image References** sections.
+2. Ignore all animation-only visual elements.
+3. Extract image requirements and convert them into **Google Image search queries** suitable for SerpAPI.
+
+---
+
+## Extraction Rules
+
+1. **Only extract images explicitly listed in the Image References array**
+   - Do NOT infer or hallucinate new images
+   - Do NOT extract from Key Points or Visual Elements unless referenced in Image References
+
+2. **One image reference = one search query**
+   - Even if multiple visuals use the same image, generate only one query
+
+3. **Search Query Construction Rules**
+   - Each query MUST:
+     - Start with `intitle:`
+     - Include the most important identifying keyword(s)
+     - End with `site:wikipedia`
+   - Prefer:
+     - Official names
+     - Scientific or technical terminology
+     - Canonical titles used in Wikipedia articles
+   - Avoid:
+     - Vague terms
+     - Adjectives like “high quality”, “detailed”, “example”
+     - Animation or diagram terms unless explicitly required
+
+4. **Keyword Prioritization Order**
+   1. Exact image_title
+   2. Core noun(s) from image_title
+   3. Domain-specific identifier (model name, system name, phenomenon)
+
+---
+
+## Output Format (STRICT)
+
+Return ONLY a JSON array.
+Do NOT include explanations, comments, or additional text.
+
+Each entry must follow this structure:
+
+```json
+[
+  {
+    "image_title": "Exact image title from Image References",
+    "search_query": "intitle:Most Important Keyword(s) site:wikipedia"
+  }
+]
+Validation Rules
+Output must be valid JSON
+
+site:wikipedia must always be present
+
+intitle: must always be present
+
+No duplicate queries
+
+If Image References is empty, return:
+
+json
+
+[]
+Example
+Input Image Reference:
+
+json
+
+{
+  "image_title": "Weather Radar Reflectivity Map",
+  "used_in_visual": "Demonstrate radar-based precipitation estimation",
+  "purpose": "Grounding real-world meteorological data"
+}
+Output:
+
+json
+
+[
+  {
+    "image_title": "Weather Radar Reflectivity Map",
+    "used_in_visual": "Demonstrate radar-based precipitation estimation",
+    "purpose": "Grounding real-world meteorological data"
+    "search_query": "intitle:Weather Radar Reflectivity site:wikipedia"
+  }
+]
+Final Instruction
+You are an extraction system.
+Return ONLY the final JSON array.
+Do NOT explain your reasoning.
+Do NOT add or remove images.
+"""
+

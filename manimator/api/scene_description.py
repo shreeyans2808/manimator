@@ -2,10 +2,15 @@ from fastapi import HTTPException
 import litellm
 import os
 from dotenv import load_dotenv
-
+import ast
+import json
+import requests
+import re
 from manimator.utils.helpers import compress_pdf
-from manimator.utils.system_prompts import SCENE_SYSTEM_PROMPT
+from manimator.utils.system_prompts import SCENE_SYSTEM_PROMPT, IMAGE_EXTRACTION_SYSTEM_PROMPT
 from manimator.few_shot.few_shot_prompts import SCENE_EXAMPLES, PDF_EXAMPLE
+
+from serpapi import GoogleSearch
 
 load_dotenv()
 
@@ -47,6 +52,49 @@ def process_prompt_scene(prompt: str) -> str:
     )
     return response.choices[0].message.content
 
+def search_image_online(prompt: str)-> str:
+    messages = [
+        {
+            "role": "system",
+            "content": IMAGE_EXTRACTION_SYSTEM_PROMPT,
+        },
+    ]
+    messages.append(
+        {
+            "role": "user",
+            "content": prompt,
+        }
+    )
+    response = litellm.completion(
+        model=os.getenv("PROMPT_SCENE_GEN_MODEL"),
+        messages=messages,
+        num_retries=2,
+    )
+    try:
+        return json.loads(response.choices[0].message.content)
+    except:
+        print("Output Type Not Correct")
+
+def extract_image_files(prompt):
+    prompt = json.loads(prompt)
+    if len(prompt)>0:
+        for i,j in enumerate(prompt):
+            search_query = j["search_query"]
+            params = {
+            "engine": "google_images",
+            "q": f"{search_query}",
+            "api_key": os.getenv("SERPAPI_API_KEY"),
+            "num": 1
+            }
+            search = GoogleSearch(params)
+            results = search.get_dict()
+            img_url = results["images_results"][0]["original"]
+            file_name = img_url.split('/')[-1]
+            with open(file_name, "wb") as f:
+                f.write(requests.get(f"{img_url}").content)
+            j["file_name"] = file_name
+        
+    return prompt
 
 def process_pdf_prompt(
     file_content: bytes,

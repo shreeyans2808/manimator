@@ -5,7 +5,7 @@ from typing import Tuple, Optional, Dict
 import functools
 
 from manimator.api.animation_generation import generate_animation_response
-from manimator.api.scene_description import process_prompt_scene, process_pdf_prompt
+from manimator.api.scene_description import process_prompt_scene, process_pdf_prompt, search_image_online, extract_image_files
 from manimator.utils.schema import ManimProcessor
 
 
@@ -18,7 +18,9 @@ def process_prompt(prompt: str):
             processor = ManimProcessor()
             with processor.create_temp_dir() as temp_dir:
                 scene_description = process_prompt_scene(prompt)
-                response = generate_animation_response(scene_description)
+                image_extracted = search_image_online(scene_description)
+                img_json = extract_image_files(image_extracted)
+                response = generate_animation_response(scene_description, img_json)
                 code = processor.extract_code(response)
 
                 if not code:
